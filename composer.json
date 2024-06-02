@@ -1,0 +1,16 @@
+{
+  "autoload": {
+    "psr-4": {
+      "Warehouse\\App\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Ieva Šinke",
+      "email": "ieva.sinke@gmail.com"
+    }
+  ],
+  "require": {
+    "nesbot/carbon": "^2.72"
+  }
+}
