@@ -52,7 +52,7 @@ function updateProductAmount(DataManager $dataManager, int $id, int $amount): vo
     $products = $dataManager->loadProducts();
     foreach ($products as $product) {
         if ($product->getId() === $id) {
-            $product->setAmont($amount);
+            $product->setAmount($amount);
             $dataManager->saveProducts($products);
             createLogEntry("Product updated: ID $id, amount changed by $amount units");
             return;
@@ -125,19 +125,32 @@ while (true) {
             addProducts($dataManager, $productName, $productDescription, $productAmount, $user->username);
             break;
         case 2:
-//            $dataManager->displayProducts();
-
+            try {
+                $dataManager->displayProducts();
+            } catch (Exception $e) {
+                echo $e->getMessage() . PHP_EOL;
+                break;
+            }
             $id = (int)readline("Enter product ID: ");
             $productAmount = (int)readline("Enter the number of units you want add/(-)remove: ");
             updateProductAmount($dataManager, $id, $productAmount);
             break;
         case 3:
-            $dataManager->displayProducts();
+            try {
+                $dataManager->displayProducts();
+            } catch (Exception $e) {
+                echo $e->getMessage() . PHP_EOL;
+                break;
+            }
             $id = (int)readline("Enter product ID to delete: ");
             deleteProduct($dataManager, $id);
             break;
         case 4:
-            $dataManager->displayProducts();
+            try {
+                $dataManager->displayProducts();
+            } catch (Exception $e) {
+                echo $e->getMessage() . PHP_EOL;
+            }
             break;
         default:
             echo "Invalid action. Please try again.\n";

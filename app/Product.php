@@ -32,7 +32,7 @@ class Product implements JsonSerializable
         $this->description = $description;
         $this->amount = $amount;
         $this->createdBy = $createdBy;
-        $this->createdAt = $createdAt ? Carbon::parse($createdAt) : Carbon::now()->toIso8601String();
+        $this->createdAt = $createdAt ? Carbon::parse($createdAt) : Carbon::now();
         $this->updatedAt = $updatedAt ? Carbon::parse($updatedAt) : null;
         $this->deletedAt = $deletedAt ? Carbon::parse($deletedAt) : null;
 
@@ -83,7 +83,7 @@ class Product implements JsonSerializable
     {
         return $this->deletedAt;
     }
-    
+
     public function setDeletedAt(?Carbon $deletedAt): void
     {
         $this->deletedAt = $deletedAt;

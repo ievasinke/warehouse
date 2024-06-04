@@ -2,6 +2,7 @@
 
 namespace App;
 
+use Exception;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
@@ -14,14 +15,15 @@ class DataManager
         $this->productFile = $productFile;
     }
 
-    public function loadProducts(): ?array
+    /** @return Product[] */
+    public function loadProducts(): array
     {
+        $products = [];
         $productsData = json_decode(file_get_contents($this->productFile));
         if ($productsData === null) {
-            return null;
+            return $products;
         }
 
-        $products = [];
         foreach ($productsData as $productData) {
             $products[] = new Product(
                 $productData->id,
@@ -51,8 +53,7 @@ class DataManager
         $products = $this->loadProducts();
 
         if (empty($products)) {
-            echo "No products available.\n";
-            return;
+            throw new Exception("No products available.");
         }
 
         $outputTasks = new ConsoleOutput();
@@ -67,7 +68,7 @@ class DataManager
                     $product->getAmount(),
                     $product->getCreatedBy(),
                     $product->getCreatedAt()->toIso8601String(),
-                    $product->getUpdatedAt() ? $product->getUpdatedAt()->toIso8601String() : 'N/A',
+                    $product->getUpdatedAt() ? $product->getUpdatedAt()->toIso8601String() : null,
                 ];
             }, $products));
         $tableProducts->render();
