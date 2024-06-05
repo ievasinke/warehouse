@@ -3,67 +3,53 @@
 require_once 'vendor/autoload.php';
 
 use App\WarehouseManager;
+use App\UserManager;
 use App\Product;
 use Carbon\Carbon;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-function getUsers(): array
-{
-    $json = file_get_contents('data/users.json');
-    return json_decode($json)->users;
-}
-
-function findObjectByAccessCode(string $accessCode): ?stdClass
-{
-    $users = getUsers();
-    $filtered = array_filter($users, function (stdClass $user) use ($accessCode): bool {
-        return $user->accessCode === $accessCode;
-    });
-    return reset($filtered) ?? null;
-}
-
 function createLogEntry(string $entry): void
 {
     file_put_contents(
         'logs/warehouse.log',
-        Carbon::now()->toIso8601String() . " " . $entry . PHP_EOL,
+        Carbon::now('Europe/Riga')->format('m/d/Y H:i:s') . " " . $entry . PHP_EOL,
         FILE_APPEND
     );
 }
 
 function addProducts(
-    WarehouseManager $dataManager,
+    WarehouseManager $warehouseManager,
     string           $name,
     string           $description,
     int              $amount,
     string           $createdBy): void
 {
-    $products = $dataManager->loadProducts();
+    $products = $warehouseManager->loadProducts();
     $id = count($products) + 1;
     $newProduct = new Product($id, $name, $description, $amount, $createdBy);
     $products[] = $newProduct;
-    $dataManager->saveProducts($products);
+    $warehouseManager->saveProducts($products);
     createLogEntry("Product added: $name by $createdBy");
 }
 
-function updateProductAmount(WarehouseManager $dataManager, int $id, int $amount): void
+function updateProductAmount(WarehouseManager $warehouseManager, int $id, int $amount, string $user): void
 {
-    $products = $dataManager->loadProducts();
+    $products = $warehouseManager->loadProducts();
     foreach ($products as $product) {
         if ($product->getId() === $id) {
             $product->setAmount($amount);
-            $dataManager->saveProducts($products);
-            createLogEntry("Product updated: ID $id, amount changed by $amount units");
+            $warehouseManager->saveProducts($products);
+            createLogEntry("$user updated product: ID $id, amount changed by $amount units");
             return;
         }
     }
     echo "Product not found\n";
 }
 
-function deleteProduct(WarehouseManager $dataManager, int $id): void
+function deleteProduct(WarehouseManager $warehouseManager, int $id, $user): void
 {
-    $products = $dataManager->loadProducts();
+    $products = $warehouseManager->loadProducts();
     $deletedProduct = null;
 
     foreach ($products as $product) {
@@ -75,14 +61,13 @@ function deleteProduct(WarehouseManager $dataManager, int $id): void
     }
 
     if ($deletedProduct !== null) {
-        $dataManager->saveProducts($products);
-        createLogEntry("Product deleted: ID $id");
+        $warehouseManager->saveProducts($products);
+        createLogEntry("$user deleted product: ID $id");
         echo "Product deleted successfully.\n";
     } else {
         echo "Product not found.\n";
     }
 }
-
 
 echo "Welcome to the WareHouse app!\n";
 $accessCode = (string)readline("Enter your access code: ");
@@ -90,13 +75,15 @@ $accessCode = (string)readline("Enter your access code: ");
 if (strlen($accessCode) !== 4) {
     exit("Invalid access code. Please try again.\n");
 }
-$user = findObjectByAccessCode($accessCode);
+
+$userManager = new UserManager();
+$user = $userManager->findUserByAccessCode($accessCode);
 if ($user === null) {
     exit("No user found.");
 }
-echo "Welcome $user->username!\n";
+echo "Welcome $user!\n";
 
-$dataManager = new WarehouseManager();
+$warehouseManager = new WarehouseManager();
 
 while (true) {
     $outputTasks = new ConsoleOutput();
@@ -120,34 +107,34 @@ while (true) {
     switch ($action) {
         case 1:
             $productName = (string)readline("Enter the name of product: ");
-            $productDescription = (string)readline("Enter the description: ");
+            $productDescription = (string)readline("Enter the description (optional): ");
             $productAmount = (int)readline("Enter the amount: ");
-            addProducts($dataManager, $productName, $productDescription, $productAmount, $user->username);
+            addProducts($warehouseManager, $productName, $productDescription, $productAmount, $user->getName());
             break;
         case 2:
             try {
-                $dataManager->displayProducts();
+                $warehouseManager->displayProducts();
             } catch (Exception $e) {
                 echo $e->getMessage() . PHP_EOL;
                 break;
             }
             $id = (int)readline("Enter product ID: ");
             $productAmount = (int)readline("Enter the number of units you want add/(-)remove: ");
-            updateProductAmount($dataManager, $id, $productAmount);
+            updateProductAmount($warehouseManager, $id, $productAmount, $user->getName());
             break;
         case 3:
             try {
-                $dataManager->displayProducts();
+                $warehouseManager->displayProducts();
             } catch (Exception $e) {
                 echo $e->getMessage() . PHP_EOL;
                 break;
             }
             $id = (int)readline("Enter product ID to delete: ");
-            deleteProduct($dataManager, $id);
+            deleteProduct($warehouseManager, $id, $user);
             break;
         case 4:
             try {
-                $dataManager->displayProducts();
+                $warehouseManager->displayProducts();
             } catch (Exception $e) {
                 echo $e->getMessage() . PHP_EOL;
             }
@@ -157,6 +144,3 @@ while (true) {
             break;
     }
 }
-
-
-
