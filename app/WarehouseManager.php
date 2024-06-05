@@ -6,7 +6,7 @@ use Exception;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
-class DataManager
+class WarehouseManager
 {
     private string $productFile;
 
@@ -55,11 +55,19 @@ class DataManager
         if (empty($products)) {
             throw new Exception("No products available.");
         }
+        $activeProducts = array_filter($products, function (Product $product): bool {
+            return $product->getDeletedAt() === null;
+        });
+
+        if (empty($activeProducts)) {
+            echo "No active products available.\n";
+            return;
+        }
 
         $outputTasks = new ConsoleOutput();
         $tableProducts = new Table($outputTasks);
         $tableProducts
-            ->setHeaders(['Index', 'Name', 'Description', 'Amount', 'Created By', 'Created At', 'Updated At'])
+            ->setHeaders(['Id', 'Name', 'Description', 'Amount', 'Created By', 'Created At', 'Updated At'])
             ->setRows(array_map(function (Product $product): array {
                 return [
                     $product->getId(),
@@ -67,10 +75,12 @@ class DataManager
                     $product->getDescription(),
                     $product->getAmount(),
                     $product->getCreatedBy(),
-                    $product->getCreatedAt()->toIso8601String(),
-                    $product->getUpdatedAt() ? $product->getUpdatedAt()->toIso8601String() : null,
+                    $product->getCreatedAt()->now('Europe/Riga')->format('m/d/Y H:i:s'),
+                    $product->getUpdatedAt()
+                        ? $product->getUpdatedAt()->now('Europe/Riga')->format('m/d/Y H:i:s')
+                        : null,
                 ];
-            }, $products));
+            }, $activeProducts));
         $tableProducts->render();
     }
 }

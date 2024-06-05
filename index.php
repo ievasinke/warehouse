@@ -2,7 +2,7 @@
 
 require_once 'vendor/autoload.php';
 
-use App\DataManager;
+use App\WarehouseManager;
 use App\Product;
 use Carbon\Carbon;
 use Symfony\Component\Console\Helper\Table;
@@ -33,11 +33,11 @@ function createLogEntry(string $entry): void
 }
 
 function addProducts(
-    DataManager $dataManager,
-    string      $name,
-    string      $description,
-    int         $amount,
-    string      $createdBy): void
+    WarehouseManager $dataManager,
+    string           $name,
+    string           $description,
+    int              $amount,
+    string           $createdBy): void
 {
     $products = $dataManager->loadProducts();
     $id = count($products) + 1;
@@ -47,7 +47,7 @@ function addProducts(
     createLogEntry("Product added: $name by $createdBy");
 }
 
-function updateProductAmount(DataManager $dataManager, int $id, int $amount): void
+function updateProductAmount(WarehouseManager $dataManager, int $id, int $amount): void
 {
     $products = $dataManager->loadProducts();
     foreach ($products as $product) {
@@ -61,7 +61,7 @@ function updateProductAmount(DataManager $dataManager, int $id, int $amount): vo
     echo "Product not found\n";
 }
 
-function deleteProduct(DataManager $dataManager, int $id): void
+function deleteProduct(WarehouseManager $dataManager, int $id): void
 {
     $products = $dataManager->loadProducts();
     $deletedProduct = null;
@@ -96,7 +96,7 @@ if ($user === null) {
 }
 echo "Welcome $user->username!\n";
 
-$dataManager = new DataManager();
+$dataManager = new WarehouseManager();
 
 while (true) {
     $outputTasks = new ConsoleOutput();
